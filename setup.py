@@ -11,7 +11,7 @@ setuptools.setup(
     description="Download Studies from an Experiment Data Depot Instance",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/zak.costello/edd-utils",
+    url="https://github.com/JBEI/edd-utils",
     packages=setuptools.find_packages(),
     entry_points = {
         'console_scripts': ['export_edd_study=edd_utils:commandline_export'],

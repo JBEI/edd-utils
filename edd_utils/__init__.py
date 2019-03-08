@@ -104,7 +104,7 @@ def commandline_export():
 
     if session is not None:
         #Download Study to Dataframe
-        df = export_study(session,args.slug)
+        df = export_study(session,args.slug,edd_server=args.server)
 
         #Write to CSV
         df.to_csv(f'{args.slug}.csv')

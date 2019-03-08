@@ -16,7 +16,7 @@ def login(edd_url='edd.jbei.org',user=getpass.getuser()):
     csrf_token = csrf_response.cookies['csrftoken']
     
     login_headers = {
-        'Host': 'edd.jbei.org',
+        'Host': edd_url,
         'Referer': auth_url,
     }
 

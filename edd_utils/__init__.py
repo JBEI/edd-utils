@@ -93,7 +93,7 @@ def commandline_export():
 
     #UserName (Optional) [Defaults to Computer User Name]
     parser.add_argument('--username', help='Username for login to EDD instance.',default=getpass.getuser())
-
+    
     #EDD Server (Optional) [Defaults to edd.jbei.org]
     parser.add_argument('--server', help='EDD instance server',default='edd.jbei.org')
 

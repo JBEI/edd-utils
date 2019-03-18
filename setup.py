@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/JBEI/edd-utils",
     packages=setuptools.find_packages(),
-    install_requires=["tqdm","pandas","requests"],
+    install_requires=["tqdm==4.25.0","pandas","requests"],
     entry_points = {
         "console_scripts": ["export_edd_study=edd_utils:commandline_export"],
     },

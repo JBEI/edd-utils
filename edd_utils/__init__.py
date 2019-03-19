@@ -1,5 +1,6 @@
 import io
 import re
+import sys
 import getpass
 import argparse
 import requests
@@ -7,16 +8,17 @@ import pandas as pd
 from tqdm.autonotebook import tqdm
 
 
-def login(edd_url='edd.jbei.org',user=getpass.getuser()):
+def login(edd_server='edd.jbei.org',user=getpass.getuser()):
     '''Log in to the Electronic Data Depot (EDD).'''
+    
     session = requests.session()
-    auth_url = 'https://' + edd_url + '/accounts/login/'
+    auth_url = 'https://' + edd_server + '/accounts/login/'
     csrf_response = session.get(auth_url)
     csrf_response.raise_for_status()
     csrf_token = csrf_response.cookies['csrftoken']
     
     login_headers = {
-        'Host': edd_url,
+        'Host': edd_server,
         'Referer': auth_url,
     }
 
@@ -38,17 +40,34 @@ def login(edd_url='edd.jbei.org',user=getpass.getuser()):
     return session
 
 
-def export_study(client,slug,edd_server='edd.jbei.org',verbose=True):
+def export_study(session,slug,edd_server='edd.jbei.org',verbose=True):
     '''Export a Study from EDD as a pandas dataframe'''
-    lookup_response = client.get(f'https://{edd_server}/rest/studies/?slug={slug}')
-    study_id = lookup_response.json()["results"][0]["pk"]
+
+    try:
+        lookup_response = session.get(f'https://{edd_server}/rest/studies/?slug={slug}')
+        study_id = lookup_response.json()["results"][0]["pk"]
+
+    except KeyError:
+        if lookup_response.status_code == requests.codes.forbidden:
+            print('Access to EDD not granted\n.')
+            sys.exit()
+        elif lookup_response.status_code == requests.codes.not_found:
+            print('EDD study was not found\n.')
+            sys.exit()
+        elif lookup_response.status_code == requests.codes.server_error:
+            print('Server error\n.')
+            sys.exit()
+        else:
+            print('An error with EDD export has occurred\n.')
+            sys.exit()
+
     
     #Get Total Number of Data Points
-    export_response = client.get(f'https://{edd_server}/rest/export/?study_id={study_id}')
+    export_response = session.get(f'https://{edd_server}/rest/export/?study_id={study_id}')
     data_points = int(export_response.headers.get('X-Total-Count'))
     
     #Download Data Points
-    export_response = client.get(f'https://{edd_server}/rest/stream-export/?study_id={study_id}', stream=True)
+    export_response = session.get(f'https://{edd_server}/rest/stream-export/?study_id={study_id}', stream=True)
         
     if export_response.encoding is None:
         export_response.encoding = 'utf-8'
@@ -82,20 +101,21 @@ def export_study(client,slug,edd_server='edd.jbei.org',verbose=True):
         buffer.seek(0)
         frame = pd.read_csv(buffer)
         df = df.append(frame, ignore_index=True)
+
     return df
 
 
 def commandline_export():
-    parser = argparse.ArgumentParser(description="Download an Study CSV from an EDD Instance")
+    parser = argparse.ArgumentParser(description="Download a Study CSV from an EDD Instance")
 
     #Slug (Required)
-    parser.add_argument("slug", help="The EDD instance study slug to download.")
+    parser.add_argument("slug", type=str, help="The EDD instance study slug to download.")
 
     #UserName (Optional) [Defaults to Computer User Name]
     parser.add_argument('--username', help='Username for login to EDD instance.',default=getpass.getuser())
     
     #EDD Server (Optional) [Defaults to edd.jbei.org]
-    parser.add_argument('--server', help='EDD instance server',default='edd.jbei.org')
+    parser.add_argument('--server', type=str, help='EDD instance server',default='edd.jbei.org')
 
     args = parser.parse_args()
 

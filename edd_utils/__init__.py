@@ -45,7 +45,6 @@ def export_study(session,slug,edd_server='edd.jbei.org',verbose=True):
 
     try:
         lookup_response = session.get(f'https://{edd_server}/rest/studies/?slug={slug}')
-        study_id = lookup_response.json()["results"][0]["pk"]
 
     except KeyError:
         if lookup_response.status_code == requests.codes.forbidden:
@@ -61,6 +60,9 @@ def export_study(session,slug,edd_server='edd.jbei.org',verbose=True):
             print('An error with EDD export has occurred\n.')
             sys.exit()
 
+    json_response = lookup_response.json()
+    # TODO: catch the error if the study is found but cannot be accessed by this user
+    study_id = json_response["results"][0]["pk"]
     
     #Get Total Number of Data Points
     export_response = session.get(f'https://{edd_server}/rest/export/?study_id={study_id}')

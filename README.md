@@ -3,7 +3,6 @@ This package is a utility for downloading Experiment Data Depot study instances 
 
 ```console
 pip install edd-utils
-
 ```
 
 The package has two entry points, either as a commandline utility or as a python module. The commandline utility is used as below:
@@ -13,3 +12,9 @@ zak@JBEI:~$ export_edd_study my_edd_study_slug --username my_edd_username --serv
 ```
 
 For an example of how to use the python module see the jupyter notebook in the notebooks directory.
+
+Note: The progressbar functionality will run correctly on JupyterLab v0.35.6 with enabled jupyterlab-manager labextension, which can be installed by
+
+```console
+ jupyter labextension install @jupyter-widgets/jupyterlab-manager
+```

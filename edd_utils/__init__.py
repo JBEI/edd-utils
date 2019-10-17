@@ -61,8 +61,16 @@ def export_study(session,slug,edd_server='edd.jbei.org',verbose=True):
             sys.exit()
 
     json_response = lookup_response.json()
+
+    # Catch the error if study slug is not found in edd_server
+    try: 
+        study_id = json_response["results"][0]["pk"]
+    except IndexError:
+        if json_response["results"] == []:
+            print(f'Slug \'{slug}\' not found in {edd_server}.\n')
+            sys.exit()
+
     # TODO: catch the error if the study is found but cannot be accessed by this user
-    study_id = json_response["results"][0]["pk"]
     
     #Get Total Number of Data Points
     export_response = session.get(f'https://{edd_server}/rest/export/?study_id={study_id}')

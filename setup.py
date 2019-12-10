@@ -5,9 +5,9 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="edd-utils",
-    version="0.0.3",
-    author="Zak Costello",
-    author_email="zak.costello@lbl.gov",
+    version="0.0.4",
+    author="Zak Costello, William Morrell, Tijana Radivojevic",
+    author_email="tradivojevic@lbl.gov",
     description="Download Studies from an Experiment Data Depot Instance",
     long_description=long_description,
     long_description_content_type="text/markdown",

@@ -8,7 +8,7 @@ import pandas as pd
 from tqdm.autonotebook import tqdm
 
 
-def login(edd_server='edd.jbei.org',user=getpass.getuser()):
+def login(edd_server='edd.jbei.org', user=getpass.getuser()):
     '''Log in to the Electronic Data Depot (EDD).'''
     
     session = requests.session()
@@ -40,7 +40,7 @@ def login(edd_server='edd.jbei.org',user=getpass.getuser()):
     return session
 
 
-def export_study(session,slug,edd_server='edd.jbei.org',verbose=True):
+def export_study(session, slug, edd_server='edd.jbei.org', verbose=True):
     '''Export a Study from EDD as a pandas dataframe'''
 
     try:
@@ -100,7 +100,6 @@ def export_study(session,slug,edd_server='edd.jbei.org',verbose=True):
                 buffer.write(line)
                 buffer.write("\n")
                 if 0 == (count % 10000):
-                    #print(f"Downloaded {count} records")
                     buffer.seek(0)
                     frame = pd.read_csv(buffer)
                     df = df.append(frame, ignore_index=True)
@@ -122,19 +121,19 @@ def commandline_export():
     parser.add_argument("slug", type=str, help="The EDD instance study slug to download.")
 
     #UserName (Optional) [Defaults to Computer User Name]
-    parser.add_argument('--username', help='Username for login to EDD instance.',default=getpass.getuser())
+    parser.add_argument('--username', help='Username for login to EDD instance.', default=getpass.getuser())
     
     #EDD Server (Optional) [Defaults to edd.jbei.org]
-    parser.add_argument('--server', type=str, help='EDD instance server',default='edd.jbei.org')
+    parser.add_argument('--server', type=str, help='EDD instance server', default='edd.jbei.org')
 
     args = parser.parse_args()
 
     #Login to EDD
-    session = login(edd_url=args.server,user=args.username)
+    session = login(edd_url=args.server, user=args.username)
 
     if session is not None:
         #Download Study to Dataframe
-        df = export_study(session,args.slug,edd_server=args.server)
+        df = export_study(session, args.slug, edd_server=args.server)
 
         #Write to CSV
         df.to_csv(f'{args.slug}.csv')

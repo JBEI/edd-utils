@@ -137,3 +137,6 @@ def commandline_export():
 
         #Write to CSV
         df.to_csv(f'{args.slug}.csv')
+
+# if __name__ == '__main__':
+#     commandline_export()

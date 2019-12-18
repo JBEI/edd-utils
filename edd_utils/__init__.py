@@ -129,7 +129,7 @@ def commandline_export():
     args = parser.parse_args()
 
     #Login to EDD
-    session = login(edd_url=args.server, user=args.username)
+    session = login(edd_server=args.server, user=args.username)
 
     if session is not None:
         #Download Study to Dataframe

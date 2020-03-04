@@ -18,3 +18,12 @@ Note: The progressbar functionality will run correctly on JupyterLab v0.35.6 wit
 ```console
  jupyter labextension install @jupyter-widgets/jupyterlab-manager
 ```
+
+Login credentials can also be provided in a configuration file, `~/.eddrc`:
+```
+[edd.server.org]
+username: my_user_name
+password: my_password
+```
+
+

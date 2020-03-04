@@ -1,14 +1,16 @@
 import io
-import re
+import os
 import sys
 import getpass
 import argparse
 import requests
+from configparser import RawConfigParser
+
 import pandas as pd
 from tqdm.autonotebook import tqdm
 
 
-def login(edd_server='edd.jbei.org', user=getpass.getuser()):
+def login(edd_server='edd.jbei.org', user=None):
     '''Log in to the Electronic Data Depot (EDD).'''
     
     session = requests.session()
@@ -16,16 +18,32 @@ def login(edd_server='edd.jbei.org', user=getpass.getuser()):
     csrf_response = session.get(auth_url)
     csrf_response.raise_for_status()
     csrf_token = csrf_response.cookies['csrftoken']
+    password = None
     
     login_headers = {
         'Host': edd_server,
         'Referer': auth_url,
     }
 
+    # Check for a configuration file
+    rc = os.path.join(os.path.expanduser('~'), '.eddrc')
+    if os.path.exists(rc):
+        config = RawConfigParser()
+        config.read(rc)
+        user = config[edd_server]['username']
+        password = config[edd_server]['password']
+        
+    # If not, get username / password from input
+    if user is None:
+        user = getpass.getuser()
+
+    if not password:
+        password = getpass.getpass(prompt=f'Password for {user}: ')
+
     login_payload = {
         'csrfmiddlewaretoken': csrf_token,
         'login': user,
-        'password': getpass.getpass(prompt=f'Password for {user}: '),
+        'password': password,
     }
 
     login_response = session.post(auth_url, data=login_payload, headers=login_headers)

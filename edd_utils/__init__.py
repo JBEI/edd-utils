@@ -10,7 +10,7 @@ import pandas as pd
 from tqdm.autonotebook import tqdm
 
 
-def login(edd_server='edd.jbei.org', user=None):
+def login(edd_server='edd.jbei.org'):
     '''Log in to the Electronic Data Depot (EDD).'''
     
     session = requests.session()
@@ -18,6 +18,7 @@ def login(edd_server='edd.jbei.org', user=None):
     csrf_response = session.get(auth_url)
     csrf_response.raise_for_status()
     csrf_token = csrf_response.cookies['csrftoken']
+    user = None
     password = None
     
     login_headers = {

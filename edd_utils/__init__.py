@@ -7,7 +7,7 @@ import requests
 from configparser import RawConfigParser
 
 import pandas as pd
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 
 
 def login(edd_server='edd.jbei.org'):
@@ -49,7 +49,7 @@ def login(edd_server='edd.jbei.org'):
 
     login_response = session.post(auth_url, data=login_payload, headers=login_headers)
     
-    #Don't leave passwords laying around
+    # Don't leave passwords laying around
     del login_payload
     
     if 'Login failed.' in login_response.text:
@@ -91,11 +91,11 @@ def export_study(session, slug, edd_server='edd.jbei.org', verbose=True):
 
     # TODO: catch the error if the study is found but cannot be accessed by this user
     
-    #Get Total Number of Data Points
+    # Get Total Number of Data Points
     export_response = session.get(f'https://{edd_server}/rest/export/?study_id={study_id}')
     data_points = int(export_response.headers.get('X-Total-Count'))
     
-    #Download Data Points
+    # Download Data Points
     export_response = session.get(f'https://{edd_server}/rest/stream-export/?study_id={study_id}', stream=True)
         
     if export_response.encoding is None:

@@ -1,5 +1,5 @@
 # EDD Utils
-This package is a utility for downloading **Experiment Data Depot** study instances through python or the commandline. It was coded and is to be used in Python 3+. The package can be installed on your system through pip via the command
+This package is a utility for downloading **Experiment Data Depot** study instances through python or the commandline. It was coded and is to be used in Python 3.6+. The package can be installed on your system through pip via the command
 
 ```console
 pip install edd-utils

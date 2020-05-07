@@ -103,3 +103,5 @@ ENV/
 # Project Specific
 .DS_Store
 *.pyc
+edd_utils/__pycache__/
+

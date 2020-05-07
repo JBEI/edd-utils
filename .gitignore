@@ -105,3 +105,4 @@ ENV/
 *.pyc
 edd_utils/__pycache__/
 
+edd_utils/__pycache__/__init__.cpython-36.pyc

@@ -21,8 +21,12 @@ Note: The progressbar functionality will run correctly on JupyterLab v0.35.6 wit
 
 Login credentials can also be provided in a configuration file, `~/.eddrc`:
 ```
-[edd.server.org]
-username: my_user_name
-password: my_password
+[edd.server1.org]
+username: my_user_name1
+password: my_password1
+
+[edd.server2.org]
+username: my_user_name2
+password: my_password2
 ```
 

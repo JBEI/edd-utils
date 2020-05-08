@@ -1,3 +1,6 @@
+__version__ = '0.0.7'
+
+
 import io
 import os
 import sys
@@ -31,6 +34,7 @@ def login(edd_server='edd.jbei.org'):
     if os.path.exists(rc):
         config = RawConfigParser()
         config.read(rc)
+        # TODO: Check if edd_server section exists
         user = config[edd_server]['username']
         password = config[edd_server]['password']
         
@@ -139,8 +143,8 @@ def commandline_export():
     #Slug (Required)
     parser.add_argument("slug", type=str, help="The EDD instance study slug to download.")
 
-    #UserName (Optional) [Defaults to Computer User Name]
-    parser.add_argument('--username', help='Username for login to EDD instance.', default=getpass.getuser())
+    # UserName (Optional) [Defaults to Computer User Name]
+    # parser.add_argument('--username', help='Username for login to EDD instance.', default=getpass.getuser())
     
     #EDD Server (Optional) [Defaults to edd.jbei.org]
     parser.add_argument('--server', type=str, help='EDD instance server', default='edd.jbei.org')
@@ -148,7 +152,7 @@ def commandline_export():
     args = parser.parse_args()
 
     #Login to EDD
-    session = login(edd_server=args.server, user=args.username)
+    session = login(edd_server=args.server)
 
     if session is not None:
         #Download Study to Dataframe

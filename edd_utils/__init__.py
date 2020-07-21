@@ -137,6 +137,71 @@ def export_study(session, slug, edd_server='edd.jbei.org', verbose=True):
     return df
 
 
+#Get metadata
+def export_metadata(session, slug, edd_server='edd.jbei.org', verbose=True):
+    '''Export a Study from EDD as a pandas dataframe'''
+
+    try:
+        lookup_response = session.get(f'https://{edd_server}/rest/studies/?slug={slug}')
+
+    except KeyError:
+        if lookup_response.status_code == requests.codes.forbidden:
+            print('Access to EDD not granted\n.')
+            sys.exit()
+        elif lookup_response.status_code == requests.codes.not_found:
+            print('EDD study was not found\n.')
+            sys.exit()
+        elif lookup_response.status_code == requests.codes.server_error:
+            print('Server error\n.')
+            sys.exit()
+        else:
+            print('An error with EDD export has occurred\n.')
+            sys.exit()
+
+    json_response = lookup_response.json()
+    # Catch the error if study slug is not found in edd_server
+    try: 
+        study_id = json_response["results"][0]["pk"]
+    except IndexError:
+        if json_response["results"] == []:
+            print(f'Slug \'{slug}\' not found in {edd_server}.\n')
+            sys.exit()
+    # TODO: catch the error if the study is found but cannot be accessed by this user
+    
+    # Get the metadata value's
+    export_response = session.get(f'https://{edd_server}/rest/lines/?study={study_id}')
+    metadata=export_response.json()
+    metadata=metadata['results'][-1]["metadata"]
+    # Get the metadata names
+    export_response = session.get(f'https://{edd_server}/rest/metadata_types/?study_id={study_id}')
+    rainer_get=export_response.json()
+    results=rainer_get['results']
+    # Merge data values and names
+    output=[]
+    for i in results:
+        try:
+            output.append((i["type_name"],metadata[str(i['pk'])]))
+            if verbose:
+                print(i["type_name"],metadata[str(i['pk'])])
+        except KeyError:
+            #when we are in here there is no data entered for that field. This happens because EDD returns all datafileds that exist anywhere in EDD not only those present in this study.
+            pass
+            #print("Not present",i["type_name"],i)
+    while rainer_get["next"]!=None: #Get next page of names
+        export_response = session.get(rainer_get["next"])
+        rainer_get=export_response.json()
+        results=rainer_get['results']
+        for i in results:
+            try:
+                output.append((i["type_name"],metadata[str(i['pk'])]))
+                if verbose:
+                    print(i["type_name"],metadata[str(i['pk'])])
+            except KeyError:
+                #when we are in here there is no data entered for that field. This happens because EDD returns all datafileds that exist anywhere in EDD not only those present in this study.
+                pass
+                #print("Not present",i["type_name"],i)
+    return output
+
 def commandline_export():
     parser = argparse.ArgumentParser(description="Download a Study CSV from an EDD Instance")
 

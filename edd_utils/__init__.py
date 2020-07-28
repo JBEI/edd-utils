@@ -138,8 +138,8 @@ def export_study(session, slug, edd_server='edd.jbei.org', verbose=True):
 
 
 #Get metadata
-def export_metadata(session, slug, edd_server='edd.jbei.org', verbose=True):
-    '''Export a Study from EDD as a pandas dataframe'''
+def export_metadata(session, slug, edd_server='edd.jbei.org', verbose=False):
+    '''Export Metadata from EDD as a pandas dataframe'''
 
     try:
         lookup_response = session.get(f'https://{edd_server}/rest/studies/?slug={slug}')
@@ -166,41 +166,56 @@ def export_metadata(session, slug, edd_server='edd.jbei.org', verbose=True):
         if json_response["results"] == []:
             print(f'Slug \'{slug}\' not found in {edd_server}.\n')
             sys.exit()
-    # TODO: catch the error if the study is found but cannot be accessed by this user
     
-    # Get the metadata value's
-    export_response = session.get(f'https://{edd_server}/rest/lines/?study={study_id}')
-    metadata=export_response.json()
-    metadata=metadata['results'][-1]["metadata"]
+    
+    if verbose:
+        print("Study id is ",study_id)
     # Get the metadata names
-    export_response = session.get(f'https://{edd_server}/rest/metadata_types/?study_id={study_id}')
+    export_response = session.get(f'https://{edd_server}/rest/metadata_types/')
     rainer_get=export_response.json()
     results=rainer_get['results']
-    # Merge data values and names
-    output=[]
+    names=[] #all names of EDD
+    pknumbers=[] #all pknumbers of EDD
     for i in results:
-        try:
-            output.append((i["type_name"],metadata[str(i['pk'])]))
-            if verbose:
-                print(i["type_name"],metadata[str(i['pk'])])
-        except KeyError:
-            #when we are in here there is no data entered for that field. This happens because EDD returns all datafileds that exist anywhere in EDD not only those present in this study.
-            pass
-            #print("Not present",i["type_name"],i)
-    while rainer_get["next"]!=None: #Get next page of names
+        names.append(i["type_name"])
+        pknumbers.append(str(i['pk']))
+    while rainer_get["next"]!=None: #Get next page of names untill all done
         export_response = session.get(rainer_get["next"])
         rainer_get=export_response.json()
         results=rainer_get['results']
         for i in results:
-            try:
-                output.append((i["type_name"],metadata[str(i['pk'])]))
-                if verbose:
-                    print(i["type_name"],metadata[str(i['pk'])])
-            except KeyError:
-                #when we are in here there is no data entered for that field. This happens because EDD returns all datafileds that exist anywhere in EDD not only those present in this study.
-                pass
-                #print("Not present",i["type_name"],i)
-    return output
+            names.append(i["type_name"])
+            pknumbers.append(str(i['pk']))
+           
+    # Get the metadata value's
+    export_response = session.get(f'https://{edd_server}/rest/lines/?study={study_id}')
+    metadata=export_response.json()
+    usednames=["Line Name","Description"] #others will be added dynamically
+    pkn=[] #numbers present in the data
+    for j in metadata['results'][0]["metadata"]:
+        if j in pknumbers:
+            usednames.append(names[pknumbers.index(j)])
+        pkn.append(j)
+
+    df=pd.DataFrame(columns=usednames)
+    
+    for i in metadata['results']:
+        data=[i["name"],i["description"]] #linename and desciption
+        for k in pkn:
+            data.append(i["metadata"][k])
+        df.loc[len(df)]=data
+    while metadata["next"]!=None:
+        export_response = session.get(metadata["next"])
+        metadata=export_response.json()
+        for i in metadata['results']:
+            data=[i["name"],i["description"]]
+            for k in pkn:
+                data.append(i["metadata"][k])
+            df.loc[len(df)]=data
+    df=df.set_index('Line Name')
+    if verbose:
+        print(df)
+    return df
 
 def commandline_export():
     parser = argparse.ArgumentParser(description="Download a Study CSV from an EDD Instance")

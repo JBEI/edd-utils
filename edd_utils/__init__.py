@@ -1,4 +1,4 @@
-__version__ = '0.0.7'
+__version__ = '0.0.8'
 
 
 import io
@@ -13,7 +13,7 @@ import pandas as pd
 from tqdm.auto import tqdm
 
 
-def login(edd_server='edd.jbei.org'):
+def login(edd_server='edd.jbei.org', user=None):
     '''Log in to the Electronic Data Depot (EDD).'''
     
     session = requests.session()
@@ -21,7 +21,6 @@ def login(edd_server='edd.jbei.org'):
     csrf_response = session.get(auth_url)
     csrf_response.raise_for_status()
     csrf_token = csrf_response.cookies['csrftoken']
-    user = None
     password = None
     
     login_headers = {
@@ -29,18 +28,19 @@ def login(edd_server='edd.jbei.org'):
         'Referer': auth_url,
     }
 
-    # Check for a configuration file
-    rc = os.path.join(os.path.expanduser('~'), '.eddrc')
-    if os.path.exists(rc):
-        config = RawConfigParser()
-        config.read(rc)
-        # TODO: Check if edd_server section exists
-        user = config[edd_server]['username']
-        password = config[edd_server]['password']
-        
-    # If not, get username / password from input
     if user is None:
-        user = getpass.getuser()
+        # Check for a configuration file
+        rc = os.path.join(os.path.expanduser('~'), '.eddrc')
+        if os.path.exists(rc):
+            config = RawConfigParser()
+            config.read(rc)
+            # TODO: Check if edd_server section exists
+            user = config[edd_server]['username']
+            password = config[edd_server]['password']
+
+        # If not, get username / password from input
+        else:
+            user = getpass.getuser()
 
     if not password:
         password = getpass.getpass(prompt=f'Password for {user}: ')
@@ -140,25 +140,25 @@ def export_study(session, slug, edd_server='edd.jbei.org', verbose=True):
 def commandline_export():
     parser = argparse.ArgumentParser(description="Download a Study CSV from an EDD Instance")
 
-    #Slug (Required)
+    # Slug (Required)
     parser.add_argument("slug", type=str, help="The EDD instance study slug to download.")
 
     # UserName (Optional) [Defaults to Computer User Name]
-    # parser.add_argument('--username', help='Username for login to EDD instance.', default=getpass.getuser())
+    parser.add_argument('--username', help='Username for login to EDD instance.', default=getpass.getuser())
     
-    #EDD Server (Optional) [Defaults to edd.jbei.org]
+    # EDD Server (Optional) [Defaults to edd.jbei.org]
     parser.add_argument('--server', type=str, help='EDD instance server', default='edd.jbei.org')
 
     args = parser.parse_args()
 
-    #Login to EDD
-    session = login(edd_server=args.server)
+    # Login to EDD
+    session = login(edd_server=args.server, user=args.username)
 
     if session is not None:
-        #Download Study to Dataframe
+        # Download Study to Dataframe
         df = export_study(session, args.slug, edd_server=args.server)
 
-        #Write to CSV
+        # Write to CSV
         df.to_csv(f'{args.slug}.csv')
 
 # if __name__ == '__main__':

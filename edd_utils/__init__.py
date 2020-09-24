@@ -7,7 +7,7 @@ import sys
 import getpass
 import argparse
 import requests
-from configparser import RawConfigParsers
+from configparser import RawConfigParser
 
 import pandas as pd
 from tqdm.auto import tqdm

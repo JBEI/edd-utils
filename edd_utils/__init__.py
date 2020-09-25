@@ -1,4 +1,4 @@
-__version__ = '0.0.8'
+__version__ = '0.0.9'
 
 
 import io
@@ -42,6 +42,9 @@ def login(edd_server='edd.jbei.org', user=None):
         else:
             user = getpass.getuser()
 
+    else:
+        user = user.lower()
+
     if not password:
         password = getpass.getpass(prompt=f'Password for {user}: ')
 
@@ -55,9 +58,17 @@ def login(edd_server='edd.jbei.org', user=None):
     
     # Don't leave passwords laying around
     del login_payload
-    
-    if 'Login failed.' in login_response.text:
+
+    credentials_not_correct_str = 'The username and/or password you specified are not correct.'
+    many_failed_attempts_str = 'Too many failed login attempts. Try again later.'
+
+    if credentials_not_correct_str in login_response.text:
         print('Login Failed!')
+        print(credentials_not_correct_str)
+        return None
+    elif many_failed_attempts_str in login_response.text:
+        print('Login Failed!')
+        print(many_failed_attempts_str)
         return None
 
     return session

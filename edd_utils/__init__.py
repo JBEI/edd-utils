@@ -147,6 +147,88 @@ def export_study(session, slug, edd_server='edd.jbei.org', verbose=True):
 
     return df
 
+def export_metadata(session, slug, edd_server='edd.jbei.org', verbose=False):
+    '''Export Metadata from EDD as a pandas dataframe'''
+
+    try:
+        lookup_response = session.get(f'https://{edd_server}/rest/studies/?slug={slug}')
+        lookup_response.raise_for_status() #Raises an exception if not code 200
+
+    except requests.exceptions.RequestException as e:  # This is the correct syntax
+        if lookup_response.status_code == requests.codes.forbidden:
+            print('Access to EDD not granted\n.')
+            sys.exit()
+        elif lookup_response.status_code == requests.codes.not_found:
+            print('EDD study was not found\n.')
+            sys.exit()
+        elif lookup_response.status_code == requests.codes.server_error:
+            print('Server error\n.')
+            sys.exit()
+        else:
+            print('An error with EDD export has occurred\n.')
+        raise SystemExit(e)
+
+    json_response = lookup_response.json()
+    # Catch the error if study slug is not found in edd_server
+    try: 
+        study_id = json_response["results"][0]["pk"]
+    except IndexError:
+        if json_response["results"] == []:
+            print(f'Slug \'{slug}\' not found in {edd_server}.\n')
+            sys.exit()
+    # TODO: catch the error if the study is found but cannot be accessed by this user
+
+    if verbose:
+        print("Study id is ",study_id)
+
+    # Get the metadata names
+    export_response = session.get(f'https://{edd_server}/rest/metadata_types/')
+    rainer_get=export_response.json()
+    results=rainer_get['results']
+    pknumbers=[] #all pknumbers of EDD
+    metadata_lookup={} #all names and pknumers of EDD
+    for i in results:
+        metadata_lookup[str(i['pk'])]=i["type_name"]
+        pknumbers.append(str(i['pk']))
+    while rainer_get["next"]!=None: #Get next page of names untill all done
+        export_response = session.get(rainer_get["next"])
+        rainer_get=export_response.json()
+        results=rainer_get['results']
+        for i in results:
+            metadata_lookup[str(i['pk'])]=i["type_name"]
+            pknumbers.append(str(i['pk']))
+           
+    # Get the metadata value's
+    export_response = session.get(f'https://{edd_server}/rest/lines/?study={study_id}')
+    metadata=export_response.json()
+    usednames=["Line Name","Description"] #others will be added dynamically
+ 
+    pkn=[] #numbers present in the data
+    for j in metadata['results'][0]["metadata"]:
+        if j in pknumbers:
+            usednames.append(metadata_lookup.get(j))
+            pkn.append(j)
+
+    df=pd.DataFrame(columns=usednames)
+    
+    for i in metadata['results']:
+        data=[i["name"],i["description"]] #linename and desciption
+        for k in pkn:
+            data.append(i["metadata"][k])
+        df.loc[len(df)]=data
+    while metadata["next"] is not None:
+        export_response = session.get(metadata["next"])
+        metadata=export_response.json()
+        for i in metadata['results']:
+            data=[i["name"],i["description"]]
+            for k in pkn:
+                data.append(i["metadata"][k])
+            df.loc[len(df)]=data
+    df=df.set_index('Line Name')
+    if verbose:
+        print(df)
+    return df
+
 
 def commandline_export():
     parser = argparse.ArgumentParser(description="Download a Study CSV from an EDD Instance")

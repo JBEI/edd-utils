@@ -30,3 +30,6 @@ username: my_user_name2
 password: my_password2
 ```
 
+## License
+
+`edd-utils` is available under the BSD-3-Clause-LBNL license(https://github.com/JBEI/edd-utils/blob/master/LICENSE.txt).

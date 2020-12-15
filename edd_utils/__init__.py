@@ -13,8 +13,30 @@ import pandas as pd
 from tqdm.auto import tqdm
 
 
-def login(edd_server='edd.jbei.org', user=None):
-    '''Log in to the Experiment Data Depot (EDD).'''
+def login(edd_server='edd.jbei.org', user=None, default_to_system_user=True):
+    '''
+        Log in to the Experiment Data Depot (EDD). Multiple sources of user information are
+        supported, and are checked in the following order:
+
+        1. Function parameters: if the user parameter is a non-empty string, it's used
+        2. Configuration file: if user is falsy and a .eddrc file is present in the home
+            directory of the account running this code, then it's searched for credentials
+            for the specified edd_server.
+        3. System account: if default_to_system_user is True, the username of the account
+            running this code is used
+        4. User input: if none of the above sources yield a username and password, there are
+            prompts to input either / both
+
+        :edd_server: the domain name of the EDD server, e.g. "public-edd.jbei.org" or
+            "public-edd.agilebiofoundry.org"
+        :param user: the username of an existing EDD user with an account at the server identified
+            by edd_server
+        :param default_to_system_user: True to default to the username of the account
+            used to run this script if user is None and no configuration file containing the
+            username is found.  False will cause a prompt to be displayed.
+
+        :return: a requests.Session object to use for authenticated communication with EDD.
+    '''
 
     session = requests.session()
     auth_url = 'https://' + edd_server + '/accounts/login/'
@@ -39,13 +61,14 @@ def login(edd_server='edd.jbei.org', user=None):
                 password = config[edd_server].get('password')
 
     # prompt user for username if config didn't exist or lacked a username
-    if not user:
-        user = getpass.getuser()
+    while not user:
+        if default_to_system_user:
+            user = getpass.getuser()
+        else:
+            user = input(f"Username for {edd_server}: ")
+            user = user.strip()
 
-    else:
-        user = user.lower()
-
-    if not password:
+    while not password:
         password = getpass.getpass(prompt=f'Password for {user}: ')
 
     login_payload = {

@@ -14,15 +14,15 @@ from tqdm.auto import tqdm
 
 
 def login(edd_server='edd.jbei.org', user=None):
-    '''Log in to the Electronic Data Depot (EDD).'''
-    
+    '''Log in to the Experiment Data Depot (EDD).'''
+
     session = requests.session()
     auth_url = 'https://' + edd_server + '/accounts/login/'
     csrf_response = session.get(auth_url)
     csrf_response.raise_for_status()
     csrf_token = csrf_response.cookies['csrftoken']
     password = None
-    
+
     login_headers = {
         'Host': edd_server,
         'Referer': auth_url,
@@ -34,13 +34,13 @@ def login(edd_server='edd.jbei.org', user=None):
         if os.path.exists(rc):
             config = RawConfigParser()
             config.read(rc)
-            # TODO: Check if edd_server section exists
-            user = config[edd_server]['username']
-            password = config[edd_server]['password']
+            if edd_server in config:
+                user = config[edd_server].get('username')
+                password = config[edd_server].get('password')
 
-        # If not, get username / password from input
-        else:
-            user = getpass.getuser()
+    # prompt user for username if config didn't exist or lacked a username
+    if not user:
+        user = getpass.getuser()
 
     else:
         user = user.lower()
@@ -55,7 +55,7 @@ def login(edd_server='edd.jbei.org', user=None):
     }
 
     login_response = session.post(auth_url, data=login_payload, headers=login_headers)
-    
+
     # Don't leave passwords laying around
     del login_payload
 
@@ -97,7 +97,7 @@ def export_study(session, slug, edd_server='edd.jbei.org'):
     json_response = lookup_response.json()
 
     # Catch the error if study slug is not found in edd_server
-    try: 
+    try:
         study_id = json_response["results"][0]["pk"]
     except IndexError:
         if json_response["results"] == []:
@@ -105,27 +105,27 @@ def export_study(session, slug, edd_server='edd.jbei.org'):
             sys.exit()
 
     # TODO: catch the error if the study is found but cannot be accessed by this user
-    
+
     # Get Total Number of Data Points
     export_response = session.get(f'https://{edd_server}/rest/export/?study_id={study_id}')
     data_points = int(export_response.headers.get('X-Total-Count'))
-    
+
     # Download Data Points
     export_response = session.get(f'https://{edd_server}/rest/stream-export/?study_id={study_id}', stream=True)
-        
+
     if export_response.encoding is None:
         export_response.encoding = 'utf-8'
-    
+
     df = pd.DataFrame()
     count = 0
-    
+
     export_iter = export_response.iter_lines(decode_unicode=True)
     first_line = next(export_iter)
-    
+
     buffer = io.StringIO()
     buffer.write(first_line)
     buffer.write("\n")
-    
+
     with tqdm(total=data_points) as pbar:
         for line in export_iter:
             if line:
@@ -172,7 +172,7 @@ def export_metadata(session, slug, edd_server='edd.jbei.org', verbose=False):
     json_response = lookup_response.json()
 
     # Catch the error if study slug is not found in edd_server
-    try: 
+    try:
         study_id = json_response["results"][0]["pk"]
         if verbose:
             print("Study ID is ", study_id)
@@ -201,12 +201,12 @@ def export_metadata(session, slug, edd_server='edd.jbei.org', verbose=False):
         for i in results:
             metadata_lookup[str(i['pk'])] = i["type_name"]
             pknumbers.append(str(i['pk']))
-           
+
     # Get the metadata value's
     export_response = session.get(f'https://{edd_server}/rest/lines/?study={study_id}')
     metadata = export_response.json()
     usednames = ["Line Name", "Description"]  # others will be added dynamically
- 
+
     pkn = []  # numbers present in the data
     for j in metadata['results'][0]["metadata"]:
         if j in pknumbers:
@@ -214,7 +214,7 @@ def export_metadata(session, slug, edd_server='edd.jbei.org', verbose=False):
             pkn.append(j)
 
     df = pd.DataFrame(columns=usednames)
-    
+
     for i in metadata['results']:
         data = [i["name"], i["description"]]  # linename and desciption
 
@@ -248,7 +248,7 @@ def commandline_export():
 
     # UserName (Optional) [Defaults to Computer User Name]
     parser.add_argument('--username', help='Username for login to EDD instance.', default=getpass.getuser())
-    
+
     # EDD Server (Optional) [Defaults to edd.jbei.org]
     parser.add_argument('--server', type=str, help='EDD instance server', default='edd.jbei.org')
 

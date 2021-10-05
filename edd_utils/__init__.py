@@ -1,4 +1,4 @@
-__version__ = '0.0.11'
+__version__ = '0.0.12'
 
 
 import io
@@ -242,7 +242,7 @@ def export_metadata(session, slug, edd_server='edd.jbei.org', verbose=False):
         data = [i["name"], i["description"]]  # linename and desciption
 
         for k in pkn:
-            data.append(i["metadata"][k])
+            data.append(i["metadata"].get(k, ""))
 
         df.loc[len(df)] = data
 
@@ -252,7 +252,7 @@ def export_metadata(session, slug, edd_server='edd.jbei.org', verbose=False):
         for i in metadata['results']:
             data = [i["name"], i["description"]]
             for k in pkn:
-                data.append(i["metadata"][k])
+                data.append(i["metadata"].get(k, ""))
             df.loc[len(df)] = data
 
     df = df.set_index('Line Name')

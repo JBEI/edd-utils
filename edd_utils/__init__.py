@@ -159,14 +159,14 @@ def export_study(session, slug, edd_server='edd.jbei.org'):
                 if 0 == (count % 10000):
                     buffer.seek(0)
                     frame = pd.read_csv(buffer)
-                    df = df.append(frame, ignore_index=True)
+                    df = pd.concat((df, frame), ignore_index=True)
                     buffer.close()
                     buffer = io.StringIO()
                     buffer.write(first_line)
                     buffer.write("\n")
         buffer.seek(0)
         frame = pd.read_csv(buffer)
-        df = df.append(frame, ignore_index=True)
+        df = pd.concat((df, frame), ignore_index=True)
 
     return df
 
